@@ -1,0 +1,29 @@
+{
+  "name": "canvas-syncing-assignment-part2",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "dependencies": {
+    "socket.io": "^2.0.3"
+  },
+  "devDependencies": {
+    "eslint": "^4.7.2",
+    "eslint-config-airbnb": "^15.1.0",
+    "eslint-plugin-import": "^2.7.0"
+  },
+  "scripts": {
+    "start": "node ./src/server.js",
+    "pretest": "eslint ./src --fix",
+    "test": "echo \"Tests complete\""
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/PulpyPaul/canvas-syncing-assignment-part2.git"
+  },
+  "author": "Paul DeSimone",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/PulpyPaul/canvas-syncing-assignment-part2/issues"
+  },
+  "homepage": "https://github.com/PulpyPaul/canvas-syncing-assignment-part2#readme"
+}
