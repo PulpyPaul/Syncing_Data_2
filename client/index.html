@@ -7,18 +7,39 @@
         "use strict";
         
         let socket;
-        let draws = {};
+        let draws = [];
         let canvas; 
-        let ctx; 
+        let ctx;
+        let button;
+        let score = 0;
+        let scoreText;
+        let users = 0;
+        let usersText;
+        let ready = false;
+        let readyCount = 0;
+        let readyText;
+        
 
         const init = () => {
+            
+            // Connect socket
             socket = io.connect();
+            
+            // Hookup html elements
             canvas = document.querySelector("#canvasID");
+            button = document.querySelector("#buttonID");
+            scoreText = document.querySelector("#scoreID");
+            usersText = document.querySelector("#usersID");
+            readyText = document.querySelector("#readyID");
             ctx = canvas.getContext("2d");
+            
+            // Events
+            button.onclick = readyUp;
+            canvas.onclick = checkCollision;
+            
+            // Sets up socket events
             setupSocket();
-            let time = new Date().getTime();
-            draws[time] = {x: 300, y:300, width: 100, height: 100, color: "black"};
-            setInterval(setCalls, 2000);
+            
             console.log("Loaded!");
         }
         
@@ -26,8 +47,6 @@
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             
             let keys = Object.keys(draws);
-            
-            console.dir(draws);
             
             for (let i = 0; i < keys.length; i++){
                 const drawCall = draws[keys[i]];
@@ -37,28 +56,93 @@
             }
         }
         
-        const setCalls = () => {
+        const drawSquare = () => {
             let xCord = Math.floor(Math.random() * 400);
             let yCord = Math.floor(Math.random() * 400);
-            let time = new Date().getTime();
-            let coords = {x: xCord, y: yCord, width: 100, height: 100, color: "red"};
+            let coords = {x: xCord, y: yCord, width: 25, height: 25, color: "red"};
             
-            socket.emit('draw', {time: time, coords: coords});
+            socket.emit('draw', coords);
         }
         
         const setupSocket = () => {
             socket.on('updateCanvas', (data) => {
-                draws[data.time] = data.coords;
+                draws = [];
+                draws.push(data);
                 draw();
+            });
+            
+            socket.on('startGame', () => {
+                drawSquare();
+            });
+            
+            socket.on('disconnection', (data) => {
+                users = data;
+                ready = false;
+                usersText.innerHTML = `Users: ${users}`;
+            });
+            
+            socket.on('newConnection', (data) => {
+                users = data;
+                usersText.innerHTML = `Users: ${users}`;
+                readyText.innerHTML = `Ready: ${readyCount} / ${users}`;
+            });
+            
+            socket.on('updateReadyStatus', (data) => {
+                readyCount = data;
+                readyText.innerHTML = `Ready: ${readyCount} / ${users}`;
+                
+                if (readyCount == users){
+                    button.innerHTML = "GAME STARTING!";
+                    socket.emit('beginGame');
+                }
             });
         }
         
-        //Math.floor(Math.random() * 20);
+        const checkCollision = (e) => {
+                     
+            var mouse = getMouse(e);
+                        
+            // Checks if the mouse position is within the square
+            if(mouse.x > draws[0].x && mouse.x < draws[0].x + draws[0].width && mouse.y > draws[0].y && mouse.y < draws[0].y + draws[0].height){
+                score += 10;
+                scoreText.innerHTML = `Score: ${score}`;
+                drawSquare();
+            }
+        }
+          
+        const readyUp = () => {
+            if (ready) {
+                button.innerHTML = "Click Here to Ready!";
+                return;
+            } else {
+               ready = true;
+                button.innerHTML = "You're Ready! Waiting for other users...";
+               socket.emit('readyUp');
+            }
+        }
+        
+        // Taken from a previous assignment in Rich Media 1, gets mouse coordinates of canvas
+        const getMouse = (e) => {
+		  var mouse = {};
+		  mouse.x = e.pageX - e.target.offsetLeft;
+		  mouse.y = e.pageY - e.target.offsetTop;
+		  return mouse;
+	    }
+
         
         window.onload = init;
     </script>
+    <style>
+        canvas {border: 2px solid black; display: block; margin: auto; margin-top: 10px;}
+        #buttonID {margin: auto; display: block;}
+        p {margin: auto; display: block; text-align: center; margin-top: 10px;}
+    </style>
 </head>
 <body>
+<button id="buttonID">Click Here to Ready!</button>
+<p id="usersID">Users: 0</p>
+<p id="readyID">Ready: 0 / 0</p>
+<p id="scoreID">Score: 0</p>
 <canvas id="canvasID" width="500" height="500"></canvas>
 </body>
 </html>
